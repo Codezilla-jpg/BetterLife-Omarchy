@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "codezilla.betterlife",
+  "name": "BetterLife-Omarchy",
+  "version": "1.0.0",
+  "author": "codezilla",
+  "license": "MIT",
+  "description": "A bundle of macOS-flavoured quality-of-life additions for the Omarchy shell: a glass dock, a Super+Tab app switcher, a Mission-Control-style workspace viewer, a compact workspaces bar widget and an AI-agent limits bar widget.",
+  "kinds": ["overlay", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "Overlays.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "BetterLife",
+    "description": "Pick the module in the widget settings: \"workspaces\" (only used workspaces, renumbered) or \"limits\" (Grok/Claude/Codex limits and session tokens). Add the widget once per module.",
+    "category": "BetterLife",
+    "allowMultiple": true,
+    "defaultSection": "left",
+    "defaults": {
+      "module": "workspaces",
+      "refreshIntervalSec": 120
+    },
+    "schema": [
+      {
+        "key": "module",
+        "type": "string",
+        "label": "Module (workspaces | limits)",
+        "defaultValue": "workspaces"
+      },
+      {
+        "key": "refreshIntervalSec",
+        "type": "integer",
+        "label": "Limits: refresh interval (seconds)",
+        "min": 30,
+        "max": 3600,
+        "step": 30,
+        "defaultValue": 120
+      }
+    ]
+  }
+}
