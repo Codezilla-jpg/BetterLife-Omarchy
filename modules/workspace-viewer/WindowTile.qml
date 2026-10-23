@@ -78,6 +78,7 @@ Item {
       visible: !shot.hasContent
       icons: tile.viewer ? tile.viewer.icons : null
       appId: tile.appId
+      address: tile.client ? String(tile.client.address || "") : ""
       size: Math.max(24, Math.min(parent.width, parent.height) * 0.3)
     }
   }
@@ -118,6 +119,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         icons: tile.viewer ? tile.viewer.icons : null
         appId: tile.appId
+        address: tile.client ? String(tile.client.address || "") : ""
         size: 18
       }
       Text {

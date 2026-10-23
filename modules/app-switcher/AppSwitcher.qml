@@ -27,17 +27,15 @@ Item {
   property var windows: []
   property var mru: []
   property string surfaceStyle: "glass"
-  readonly property int iconSizePx: 64
+  readonly property int iconSizePx: 52
 
   // Displays, numbered 1..n left to right (then top to bottom), and which
-  // display each window sits on — for the little "1"/"2" monitor badges and
-  // the legend under the title. Read straight from `hyprctl -j`, like the
-  // workspace viewer does, since Quickshell's Hyprland model can lag behind.
-  property var monitors: []       // [{ id, num, label }]
+  // display each window sits on — for the small number badge on each app.
+  // Read straight from `hyprctl -j`, like the workspace viewer does, since
+  // Quickshell's Hyprland model can lag behind.
+  property int monitorCount: 0
   property var monNumByAddr: ({}) // "0x…" -> display number
-  readonly property bool multiMonitor: root.monitors.length > 1
-  property string dmiVendor: ""
-  property string dmiProduct: ""
+  readonly property bool multiMonitor: root.monitorCount > 1
 
   // Gesture this overlay currently shows, and the last one that was already
   // confirmed or cancelled. Anything arriving for a finished gesture is a
@@ -81,66 +79,20 @@ Item {
 
   // ------------------------------------------------------------- displays
 
-  FileView {
-    path: "/sys/class/dmi/id/sys_vendor"
-    printErrors: false
-    onLoaded: root.dmiVendor = text().trim()
-  }
-
-  FileView {
-    path: "/sys/class/dmi/id/product_name"
-    printErrors: false
-    onLoaded: root.dmiProduct = text().trim()
-  }
-
-  // "LG ULTRAWIDE" -> "LG Ultrawide": shouting model names read badly as a
-  // caption; short all-caps words (brands, "HD", "4K") stay as they are.
-  function softenCaps(str) {
-    return String(str).split(" ").map(function(w) {
-      return (w.length > 3 && w === w.toUpperCase() && /[A-Z]/.test(w))
-        ? w.charAt(0) + w.slice(1).toLowerCase() : w
-    }).join(" ")
-  }
-
-  // What a person would call the display: the laptop's own panel by the
-  // laptop's name (its make/model is just the panel supplier, e.g. "Sharp
-  // 0x1517"), an external one by brand and model.
-  function monitorLabel(m) {
-    var name = String(m.name || "")
-    if (/^(eDP|LVDS|DSI)/.test(name)) {
-      var vendor = root.dmiVendor.split(" ")[0]
-      var laptop = (vendor + " " + root.dmiProduct).trim()
-      return laptop !== "" ? laptop + " (Laptop)" : "Laptop-Display"
-    }
-    var brand = String(m.make || "").split(" ")[0]
-    var model = String(m.model || "").trim()
-    if (model === "" || /^0x[0-9a-f]+$/i.test(model)) {
-      // No usable model name: fall back to the description minus its serial.
-      var desc = String(m.description || "").replace(/\s+0x[0-9A-Fa-f]+$/, "").trim()
-      return desc !== "" ? root.softenCaps(desc) : name
-    }
-    if (brand !== "" && model.toLowerCase().indexOf(brand.toLowerCase()) !== 0) model = brand + " " + model
-    return root.softenCaps(model)
-  }
-
   function applyDisplaySnapshot(text) {
     var data
     try { data = JSON.parse(text) } catch (e) { return }
     var mons = (data.m || []).filter(function(m) { return !m.disabled })
     mons.sort(function(a, b) { return a.x !== b.x ? a.x - b.x : a.y - b.y })
     var numById = {}
-    var list = []
-    for (var i = 0; i < mons.length; i++) {
-      numById[mons[i].id] = i + 1
-      list.push({ id: mons[i].id, num: i + 1, label: root.monitorLabel(mons[i]) })
-    }
+    for (var i = 0; i < mons.length; i++) numById[mons[i].id] = i + 1
     var byAddr = {}
     var clients = data.c || []
     for (var j = 0; j < clients.length; j++) {
       var n = numById[clients[j].monitor]
       if (n) byAddr[String(clients[j].address)] = n
     }
-    root.monitors = list
+    root.monitorCount = mons.length
     root.monNumByAddr = byAddr
   }
 
@@ -362,10 +314,8 @@ Item {
       id: card
       visible: root.opened && root.windows.length > 0
       anchors.centerIn: parent
-      width: Math.min(parent.width - 80, Math.max(
-        root.windows.length * (root.iconSizePx + 32) + 48,
-        root.multiMonitor ? legend.implicitWidth + 48 : 0))
-      height: root.iconSizePx + 96 + (root.multiMonitor ? legend.implicitHeight + 12 : 0)
+      width: Math.min(parent.width - 80, Math.max(iconRow.implicitWidth + 28, 220))
+      height: iconRow.height + titleText.implicitHeight + 38
 
       // Pop-in, like the real Cmd+Tab HUD appearing.
       opacity: visible ? 1 : 0
@@ -383,7 +333,7 @@ Item {
       GlassSurface {
         anchors.fill: parent
         variant: root.surfaceStyle
-        radius: 24
+        radius: 20
         boost: 0.15
       }
 
@@ -391,9 +341,9 @@ Item {
       // Sibling of the Row so the Row's layout never fights the animated x.
       Rectangle {
         id: highlight
-        radius: 16
+        radius: 13
         color: Util.alpha(Color.foreground, 0.1)
-        border.color: Util.alpha(Color.accent, 0.6)
+        border.color: Util.alpha(Color.accent, 0.45)
         border.width: 1
         readonly property var selectedItem: iconRepeater.count > 0 ? iconRepeater.itemAt(root.selectedIndex) : null
         visible: selectedItem !== null
@@ -409,9 +359,9 @@ Item {
       Row {
         id: iconRow
         anchors.top: parent.top
-        anchors.topMargin: 22
+        anchors.topMargin: 14
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 16
+        spacing: 6
 
         Repeater {
           id: iconRepeater
@@ -422,13 +372,14 @@ Item {
             required property int index
             required property var modelData
             readonly property bool selected: index === root.selectedIndex
-            width: root.iconSizePx + 16
-            height: root.iconSizePx + 16
+            width: root.iconSizePx + 14
+            height: root.iconSizePx + 14
 
             AppIcon {
               anchors.centerIn: parent
               icons: appIcons
               appId: String(slot.modelData.appId || "")
+              address: root.addressFor(slot.modelData)
               size: root.iconSizePx
               scale: slot.selected ? 1.06 : 1.0
               opacity: slot.selected ? 1.0 : 0.82
@@ -443,8 +394,8 @@ Item {
               number: num
               anchors.right: parent.right
               anchors.bottom: parent.bottom
-              anchors.rightMargin: 2
-              anchors.bottomMargin: 2
+              anchors.rightMargin: 0
+              anchors.bottomMargin: 0
               active: slot.selected
             }
 
@@ -461,58 +412,17 @@ Item {
       Text {
         id: titleText
         anchors.top: iconRow.bottom
-        anchors.topMargin: 14
+        anchors.topMargin: 8
         anchors.horizontalCenter: parent.horizontalCenter
-        width: parent.width - 32
+        width: parent.width - 28
         horizontalAlignment: Text.AlignHCenter
         elide: Text.ElideRight
         color: Color.foreground
         font.family: Style.font.family
-        font.pixelSize: Style.font.title
+        font.pixelSize: Style.font.body
         text: {
           var w = root.windows[root.selectedIndex]
-          return w ? (w.title || appIcons.nameFor(w.appId) || "") : ""
-        }
-      }
-
-      // Legend: what display 1, 2, … actually is. The one the highlighted
-      // window is on stands out.
-      Row {
-        id: legend
-        visible: root.multiMonitor
-        anchors.top: titleText.bottom
-        anchors.topMargin: 12
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 18
-
-        readonly property int currentNum: {
-          var w = root.windows[root.selectedIndex]
-          return w ? root.monitorNumFor(w) : 0
-        }
-
-        Repeater {
-          model: root.monitors
-          delegate: Row {
-            required property var modelData
-            readonly property bool current: modelData.num === legend.currentNum
-            spacing: 7
-            opacity: current ? 1.0 : 0.55
-            Behavior on opacity { NumberAnimation { duration: 140 } }
-
-            MonitorGlyph {
-              anchors.verticalCenter: parent.verticalCenter
-              number: modelData.num
-              active: parent.current
-            }
-
-            Text {
-              anchors.verticalCenter: parent.verticalCenter
-              color: Color.foreground
-              font.family: Style.font.family
-              font.pixelSize: Style.font.bodySmall
-              text: modelData.label
-            }
-          }
+          return w ? (w.title || appIcons.nameFor(w.appId, root.addressFor(w)) || "") : ""
         }
       }
     }

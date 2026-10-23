@@ -143,10 +143,10 @@ Panel {
   }
 
   function markUrlFor(id) {
-    if (id === "claude") return Qt.resolvedUrl("assets/claude.svg")
+    if (id === "claude") return Qt.resolvedUrl("../../shared/assets/claude.svg")
     if (id === "codex")
-      return Qt.resolvedUrl(root.lightSurface ? "assets/codex-light.svg" : "assets/codex.svg")
-    return Qt.resolvedUrl(root.lightSurface ? "assets/grok-light.svg" : "assets/grok.svg")
+      return Qt.resolvedUrl(root.lightSurface ? "../../shared/assets/codex-light.svg" : "../../shared/assets/codex.svg")
+    return Qt.resolvedUrl(root.lightSurface ? "../../shared/assets/grok-light.svg" : "../../shared/assets/grok.svg")
   }
 
   function collectPath() {

@@ -60,6 +60,7 @@ Rounded {
         visible: !shot.hasContent
         icons: face.viewer ? face.viewer.icons : null
         appId: mini.client ? String(mini.client.class || "") : ""
+        address: mini.client ? String(mini.client.address || "") : ""
         size: Math.max(8, Math.min(parent.width, parent.height) * 0.5)
       }
     }

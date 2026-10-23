@@ -9,9 +9,12 @@ Item {
 
   property var icons: null
   property string appId: ""
+  // Hyprland address of one window of this app ("0x…"); lets AppIcons look at
+  // what runs in a window whose class no app declares. Optional.
+  property string address: ""
   property real size: 48
 
-  readonly property string source: icons ? icons.sourceFor(appId) : ""
+  readonly property string source: icons ? icons.sourceFor(appId, address) : ""
   readonly property bool showMonogram: source.length === 0 || image.status === Image.Error
 
   width: size
@@ -41,7 +44,7 @@ Item {
 
     Text {
       anchors.centerIn: parent
-      text: root.icons ? root.icons.nameFor(root.appId).charAt(0).toUpperCase() : "?"
+      text: root.icons ? root.icons.nameFor(root.appId, root.address).charAt(0).toUpperCase() : "?"
       color: Color.foreground
       font.family: Style.font.family
       font.pixelSize: Math.max(8, Math.round(root.size * 0.44))
