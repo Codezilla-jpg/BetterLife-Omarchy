@@ -6,7 +6,7 @@ import Quickshell.Io
 // the dock, the Super+Tab app switcher and the workspace viewer. Each one is
 // self-contained in modules/<name>/ and brings its own windows and IPC target.
 //
-// Modules can be switched off in ~/.local/state/omarchy/settings/betterlife.json:
+// setup.sh picks the modules and writes ~/.local/state/omarchy/settings/betterlife.json:
 //   { "modules": { "dock": false } }
 // Anything not listed there stays on.
 Item {

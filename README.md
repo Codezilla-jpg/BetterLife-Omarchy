@@ -16,44 +16,59 @@ Requires Omarchy with the Quickshell-based shell and Hyprland's Lua config.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/Codezilla-jpg/BetterLife-Omarchy.git --enable
+bash <(curl -fsSL https://raw.githubusercontent.com/Codezilla-jpg/BetterLife-Omarchy/main/install.sh)
 ```
 
-That clones the plugin to `~/.config/omarchy/plugins/codezilla.betterlife/`
-and turns on the dock, the app switcher and the workspace viewer.
+The installer adds the plugin to `~/.config/omarchy/plugins/codezilla.betterlife/`
+and then asks two things right in the terminal:
 
-### Bar widgets
+1. **Which modules?** A checklist (Space toggles, Enter confirms):
+   - Dock
+   - App switcher
+   - Workspaces (the workspace viewer and the workspaces bar widget)
+   - Limits
+2. **Keybindings now or later?** Super+Tab for the app switcher and Super+E
+   for the workspace viewer. Only asked when one of those two is picked.
 
-Omarchy gives a plugin one bar widget, so both bar modules come through the
-same widget and a `module` setting picks which one. Add it once per module in
-`~/.config/omarchy/shell.json`:
+Only what you pick gets switched on. Bar widgets are placed for you: the
+workspaces widget takes the place of Omarchy's own, Limits goes next to the
+tray.
 
-```json
-"left":  [ { "id": "omarchy.menu" }, { "id": "codezilla.betterlife", "module": "workspaces" } ],
-"right": [ { "id": "codezilla.betterlife", "module": "limits" } ]
+Already added the plugin with `omarchy plugin add`? Run the setup yourself:
+
+```bash
+~/.config/omarchy/plugins/codezilla.betterlife/setup.sh
 ```
 
-### Keybindings
+## Changing your choice
 
-The app switcher and the workspace viewer are driven from Hyprland. Copy the
-parts you want from [`examples/hyprland.lua`](examples/hyprland.lua):
+Run the setup again; it starts from what is set now.
 
-- **Super+Tab** gesture for the app switcher (hold Super, tap Tab, release)
-- **Super+E** for the workspace viewer
-- the blur layer rule for the glass surfaces
-
-Then `hyprctl reload`.
-
-## Turning modules off
-
-Everything outside the bar is on by default. To switch a module off, create
-`~/.local/state/omarchy/settings/betterlife.json`:
-
-```json
-{ "modules": { "dock": false, "appSwitcher": true, "workspaceViewer": true } }
+```bash
+~/.config/omarchy/plugins/codezilla.betterlife/setup.sh             # modules + keybindings
+~/.config/omarchy/plugins/codezilla.betterlife/setup.sh --keybinds  # keybindings only
 ```
 
-Changes apply right away.
+Without a terminal, e.g. from a dotfiles script:
+
+```bash
+setup.sh --modules dock,app-switcher,workspaces,limits --keybinds-on
+```
+
+What the setup writes:
+
+| File | What |
+|------|------|
+| `~/.local/state/omarchy/settings/betterlife.json` | which of dock, app switcher and workspace viewer load |
+| `~/.config/omarchy/shell.json` | the bar widgets, and the plugin in `plugins` |
+| `~/.config/hypr/betterlife.lua` | loads the chosen snippets from the plugin's `hypr/` folder |
+| `~/.config/hypr/hyprland.lua` | one `require_optional` line for the file above |
+
+The keybindings are loaded straight from the plugin, so `omarchy plugin update`
+updates them too, and a removed plugin just loads nothing. If you would rather
+keep them in your own `bindings.lua`, answer "later" and copy what you want
+from [`hypr/`](hypr/); the setup notices bindings you already have and does not
+add them twice.
 
 ## IPC
 
@@ -81,7 +96,9 @@ modules/
   workspace-viewer/
   workspaces/
   limits/            QML panel + collect.py (reads local agent sessions)
-examples/hyprland.lua
+hypr/                Hyprland snippets: keybindings and the blur rule
+install.sh           curl installer: adds the plugin, then runs setup.sh
+setup.sh             module and keybinding picker
 ```
 
 Each module is self-contained in its folder; only `shared/` is common.
